@@ -67,7 +67,6 @@ LeRoy-AI/
 │       └── resources/
 │           └── static/
 │               └── index.html
-├── .env.example
 ├── pom.xml
 └── README.md
 ```
@@ -159,7 +158,7 @@ A resposta contém os campos:
 - `termoBusca`: termo identificado para a pesquisa.
 - `produtos`: lista de produtos encontrados.
 
-<<<<<<< HEAD
+
 
 
 ## Equipe e Entrega
