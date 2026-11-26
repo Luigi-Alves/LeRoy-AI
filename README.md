@@ -157,25 +157,6 @@ A resposta contém os campos:
 - `termoBusca`: termo identificado para a pesquisa.
 - `produtos`: lista de produtos encontrados.
 
-## Limitações e próximos passos
-
-Atualmente, o projeto é um MVP acadêmico com dados demonstrativos.
-
-Suas principais limitações são:
-
-- O catálogo, os preços, as quantidades e as localizações são fictícios.
-- O mapa é ilustrativo e não representa o layout real de uma filial.
-- Não existe integração com o estoque em tempo real da Leroy Merlin.
-- O Gemini depende de disponibilidade, conectividade e cota da API.
-- O catálogo não possui fichas técnicas completas para validar instalação e compatibilidade.
-
-### Possíveis evoluções
-
-- Integração com catálogo e estoque oficiais da Leroy Merlin.
-- Implementação de localização real por filial.
-- Inclusão de informações técnicas verificadas pelos fabricantes.
-- Aprimoramento das recomendações com busca semântica e embeddings.
-- Evolução do mapa para representar o layout real das lojas.
 
 ## Equipe e Entrega
 
