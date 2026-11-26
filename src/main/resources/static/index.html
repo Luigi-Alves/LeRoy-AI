@@ -1,0 +1,1270 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f36f21">
+<title>LeRoy AI Assistant</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap');
+
+:root {
+    --orange: #f36f21;
+    --orange-dark: #d95712;
+    --ink: #20242b;
+    --muted: #737d8b;
+    --bg: #f5f6f8;
+    --line: #e6e8ec;
+    --white: #fff;
+    --green: #17834c;
+    --shadow: 0 12px 34px rgba(32, 36, 43, .07);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: 'DM Sans', Arial, sans-serif;
+    background: radial-gradient(ellipse at 85% 0%, #fff0e7 0, transparent 28%), var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+}
+
+header {
+    background: rgba(255, 255, 255, .9);
+    border-bottom: 1px solid rgba(230, 232, 236, .9);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    backdrop-filter: blur(14px);
+}
+
+.nav {
+    max-width: 1280px;
+    margin: auto;
+    padding: 16px 26px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.brand {
+    color: var(--ink);
+    font: 800 20px 'Manrope', sans-serif;
+    letter-spacing: -.7px;
+}
+
+.brand:first-letter {
+    color: var(--orange);
+}
+
+.status {
+    font-size: 12px;
+    color: var(--green);
+    background: #eaf7ef;
+    border: 1px solid #d4efdf;
+    border-radius: 30px;
+    padding: 8px 12px;
+    font-weight: 700;
+}
+
+main {
+    max-width: 1280px;
+    margin: auto;
+    padding: 44px 26px 32px;
+}
+
+.intro {
+    margin: 0 auto 28px;
+    max-width: 900px;
+    text-align: center;
+}
+
+.eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #bd4e11;
+    background: #fff1e8;
+    border: 1px solid #ffdfca;
+    border-radius: 30px;
+    padding: 7px 12px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+}
+
+.intro h1 {
+    font: 800 clamp(30px, 4vw, 46px)/1.12 'Manrope', sans-serif;
+    letter-spacing: -1.7px;
+    margin: 17px 0 10px;
+}
+
+.intro p {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.7;
+    margin: 0 auto;
+    max-width: 680px;
+}
+
+.workspace {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: stretch;
+}
+
+.panel,
+.products {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+.panel-head {
+    padding: 20px 22px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.panel-head h2 {
+    font: 700 15px 'Manrope', sans-serif;
+    margin: 0;
+    letter-spacing: -.2px;
+}
+
+.panel-head p {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 5px 0 0;
+}
+
+.tag {
+    font-size: 10px;
+    background: #f5f6f8;
+    border: 1px solid #eceef1;
+    border-radius: 30px;
+    padding: 7px 10px;
+    color: #606977;
+    font-weight: 800;
+    letter-spacing: .4px;
+    white-space: nowrap;
+}
+
+/* CHAT */
+
+.chat,
+.map-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 570px;
+}
+
+.messages {
+    padding: 22px;
+    min-height: 300px;
+    max-height: 390px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+    flex: 1;
+    background: linear-gradient(180deg, #fff 0%, #fdfdfd 100%);
+}
+
+.message {
+    max-width: 86%;
+    padding: 13px 16px;
+    border-radius: 16px;
+    font-size: 13px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    box-shadow: 0 2px 6px #20242b08;
+}
+
+.assistant {
+    background: #f2f4f6;
+    align-self: flex-start;
+    border-bottom-left-radius: 5px;
+}
+
+.messages > .assistant:first-child {
+    text-align: center;
+    white-space: normal;
+}
+
+.user {
+    background: linear-gradient(135deg, var(--orange), #f58438);
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 5px;
+}
+
+.error {
+    background: #fff0f0;
+    color: #a52e2e;
+}
+
+.suggestions {
+    padding: 2px 20px 17px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.suggestions button {
+    border: 1px solid #e5e7eb;
+    background: white;
+    border-radius: 30px;
+    padding: 9px 13px;
+    font: 600 11px 'DM Sans', sans-serif;
+    color: #505967;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.suggestions button:hover {
+    border-color: #ffb98f;
+    background: #fff7f1;
+    color: var(--orange-dark);
+    transform: translateY(-1px);
+}
+
+.input-area {
+    padding: 16px 20px 19px;
+    border-top: 1px solid var(--line);
+    background: #fff;
+}
+
+.search {
+    display: flex;
+    gap: 10px;
+}
+
+input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid #e0e3e8;
+    border-radius: 12px;
+    padding: 14px 15px;
+    outline: none;
+    font: 13px 'DM Sans', sans-serif;
+    transition: .2s;
+    background: #fafbfc;
+}
+
+input:focus {
+    border-color: #f7a16e;
+    background: #fff;
+    box-shadow: 0 0 0 4px #f36f2114;
+}
+
+.send {
+    border: 0;
+    border-radius: 12px;
+    padding: 0 19px;
+    background: var(--orange);
+    color: #fff;
+    font: 700 12px 'DM Sans', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 5px 12px #f36f2133;
+    transition: .2s;
+}
+
+.send:hover {
+    background: var(--orange-dark);
+    transform: translateY(-1px);
+}
+
+.send:disabled {
+    opacity: .6;
+    cursor: wait;
+}
+
+/* MAPA */
+
+.map-body {
+    padding: 17px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.hint {
+    background: #fff8f3;
+    border: 1px solid #ffe4d3;
+    color: #89502e;
+    border-radius: 11px;
+    padding: 11px 13px;
+    font-size: 11px;
+    line-height: 1.5;
+    margin-bottom: 13px;
+}
+
+.map-wrap {
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: linear-gradient(145deg, #fafbfc, #f5f7f9);
+    padding: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: 320px;
+}
+
+svg {
+    width: 100%;
+    max-height: 390px;
+}
+
+.aisle {
+    cursor: pointer;
+    outline: none;
+}
+
+.aisle rect {
+    fill: url(#shelfPattern) #fbfcfd;
+    stroke: #bac3ce;
+    stroke-width: 1.5;
+    rx: 7;
+    transition: .2s;
+}
+
+.aisle:hover rect,
+.aisle:focus rect {
+    stroke: var(--orange);
+    fill: #fff6f0;
+    filter: drop-shadow(0 2px 3px #f36f2122);
+}
+
+.aisle.selected rect {
+    fill: url(#selectedShelfPattern) #fff0e6;
+    stroke: var(--orange);
+    stroke-width: 3;
+}
+
+.aisle text {
+    font: 700 10px 'DM Sans', sans-serif;
+    fill: #596473;
+    pointer-events: none;
+}
+
+.aisle.selected text {
+    fill: #a7440c;
+}
+
+.map-legend {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    color: var(--muted);
+    font-size: 10px;
+    padding: 11px 2px;
+}
+
+.swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 1px solid #cbd1d9;
+    border-radius: 3px;
+    background: white;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+.swatch.active {
+    background: #ffe0cc;
+    border-color: var(--orange);
+}
+
+.location-box {
+    display: flex;
+    gap: 11px;
+    align-items: center;
+    padding: 13px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #fcfcfd;
+}
+
+.pin {
+    background: #fff0e6;
+    color: var(--orange);
+    padding: 9px;
+    border-radius: 9px;
+}
+
+.location-box strong { font-size: 12px; }
+
+.location-box p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.reset {
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 8px;
+    padding: 7px 10px;
+    font: 700 10px 'DM Sans', sans-serif;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.reset:hover {
+    border-color: #ffb98f;
+    color: var(--orange-dark);
+}
+
+/* PRODUTOS */
+
+.products {
+    margin-top: 20px;
+    padding: 22px;
+}
+
+.products-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 17px;
+}
+
+.products h2 {
+    font: 700 17px 'Manrope', sans-serif;
+    margin: 0;
+    letter-spacing: -.3px;
+}
+
+.sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 5px 0 0;
+}
+
+.count {
+    font-size: 11px;
+    color: var(--muted);
+    background: #f5f6f8;
+    border-radius: 20px;
+    padding: 7px 10px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+    gap: 13px;
+}
+
+.product {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    transition: .2s;
+    background: #fff;
+}
+
+.product:hover {
+    border-color: #ffc49f;
+    box-shadow: 0 8px 22px #20242b0c;
+    transform: translateY(-2px);
+}
+
+.category {
+    font-size: 10px;
+    color: var(--orange-dark);
+    font-weight: 800;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+}
+
+.product h3 {
+    font: 700 14px 'Manrope', sans-serif;
+    margin: 9px 0;
+    line-height: 1.4;
+}
+
+.description {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+    min-height: 35px;
+}
+
+.price {
+    font: 800 21px 'Manrope', sans-serif;
+    margin: 14px 0 7px;
+    letter-spacing: -.5px;
+}
+
+.stock,
+.product-location {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 5px;
+    line-height: 1.5;
+}
+
+.locate {
+    margin-top: 14px;
+    background: #fff7f1;
+    border: 1px solid #ffd4bd;
+    color: #bd4e11;
+    border-radius: 9px;
+    padding: 10px;
+    font: 700 11px 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.locate:hover {
+    background: var(--orange);
+    border-color: var(--orange);
+    color: white;
+}
+
+.empty {
+    grid-column: 1/-1;
+    border: 1px dashed #d5d9df;
+    border-radius: 12px;
+    padding: 27px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+    background: #fcfcfd;
+}
+
+footer {
+    text-align: center;
+    color: #8a929e;
+    font-size: 10px;
+    padding: 23px;
+}
+
+/* RESPONSIVIDADE */
+
+@media (max-width: 850px) {
+    main { padding-top: 32px; }
+    .workspace { grid-template-columns: 1fr; }
+    .chat, .map-panel { min-height: auto; }
+    .messages { min-height: 220px; }
+    .map-panel { min-height: 500px; }
+}
+
+@media (max-width: 560px) {
+    .nav { padding: 13px 16px; }
+    .brand { font-size: 17px; }
+    .status { font-size: 9px; padding: 7px 9px; }
+    main { padding: 27px 13px; }
+    .intro { margin-bottom: 23px; }
+    .intro h1 { font-size: 30px; letter-spacing: -1px; }
+    .intro p { font-size: 13px; }
+    .panel, .products { border-radius: 16px; }
+    .panel-head { padding: 17px; }
+    .messages { padding: 17px; }
+    .suggestions { padding: 2px 15px 14px; }
+    .input-area { padding: 14px; }
+    .search { flex-direction: column; }
+    .send { padding: 13px; }
+    .products { padding: 16px; }
+    .grid { grid-template-columns: 1fr; }
+    .map-wrap { min-height: 280px; }
+    .map-body { padding: 13px; }
+    .products-head { align-items: flex-start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="nav">
+        <div class="brand">▣ LeRoy AI Assistant</div>
+        <div class="status" id="serverStatus">● Verificando servidor...</div>
+    </div>
+</header>
+
+<main>
+
+<section class="intro">
+    <div class="eyebrow">Assistente inteligente de compras</div>
+    <h1>Encontre o que precisa. Saiba onde está.</h1>
+    <p>Descreva seu projeto ou problema. O LeRoy AI ajuda a encontrar produtos e mostra em qual corredor eles estão.</p>
+</section>
+
+<section class="workspace">
+
+    <!-- CHAT -->
+    <section class="panel chat">
+
+        <div class="panel-head">
+            <div>
+                <h2>Assistente LeRoy</h2>
+                <p>Produtos, soluções e orientação na loja</p>
+            </div>
+            <span class="tag">IA ATIVA</span>
+        </div>
+
+        <div class="messages" id="messages">
+            <div class="message assistant">
+                Olá! Sou o assistente da Leroy Merlin.
+                Conte o que você precisa para sua casa, reforma ou construção.
+                Vou procurar produtos que possam ajudar e mostrar onde encontrá-los na loja.
+            </div>
+        </div>
+
+        <div class="suggestions">
+            <button type="button" data-query="Quero instalar uma torneira">Instalar uma torneira</button>
+            <button type="button" data-query="Quero pintar uma parede">Pintar uma parede</button>
+            <button type="button" data-query="Preciso de ferramentas">Ferramentas</button>
+        </div>
+
+        <div class="input-area">
+            <form class="search" id="searchForm">
+                <input
+                    id="searchInput"
+                    placeholder="Ex.: Quero instalar uma torneira..."
+                    autocomplete="off"
+                    aria-label="Mensagem para o assistente"
+                >
+                <button class="send" id="sendButton">Enviar mensagem</button>
+            </form>
+        </div>
+
+    </section>
+
+    <!-- MAPA 2D -->
+    <section class="panel map-panel">
+
+        <div class="panel-head">
+            <div>
+                <h2>⌖ Mapa da loja</h2>
+                <p>Selecione um corredor para ver todos os produtos disponíveis nele</p>
+            </div>
+
+            <div>
+                <span class="tag">VISÃO 2D</span>
+                <button class="reset" id="resetMapButton" type="button">Limpar</button>
+            </div>
+        </div>
+
+        <div class="map-body">
+
+            <div class="hint" id="mapHint">
+                Faça uma busca ou clique em um corredor para ver todos os produtos disponíveis nele.
+            </div>
+
+            <div class="map-wrap">
+
+                <svg viewBox="0 0 520 390" role="img" aria-label="Planta ilustrativa da loja com doze corredores">
+
+                    <rect x="8" y="8" width="504" height="374" rx="12" fill="#f1f3f5" stroke="#d9dde3"/>
+
+                    <rect x="22" y="22" width="476" height="38" rx="7" fill="#e5e9ee"/>
+                    <text x="260" y="46" text-anchor="middle" fill="#596473" font-size="10">ENTRADA PRINCIPAL</text>
+
+                    <!-- Corredores 01 a 06 -->
+                    <g class="aisle" data-aisle="01" tabindex="0" role="button">
+                        <rect x="35" y="87" width="62" height="94"/>
+                        <text x="66" y="139" text-anchor="middle">01</text>
+                    </g>
+
+                    <g class="aisle" data-aisle="02" tabindex="0" role="button">
+                        <rect x="108" y="87" width="62" height="94"/>
+                        <text x="139" y="139" text-anchor="middle">02</text>
+                    </g>
+
+                    <g class="aisle" data-aisle="03" tabindex="0" role="button">
+                        <rect x="181" y="87" width="62" height="94"/>
+                        <text x="212" y="139" text-anchor="middle">03</text>
+                    </g>
+
+                    <g class="aisle" data-aisle="04" tabindex="0" role="button">
+                        <rect x="35" y="197" width="62" height="94"/>
+                        <text x="66" y="249" text-anchor="middle">04</text>
+                    </g>
+
+                    <g class="aisle" data-aisle="05" tabindex="0" role="button">
+                        <rect x="108" y="197" width="62" height="94"/>
+                        <text x="139" y="249" text-anchor="middle">05</text>
+                    </g>
+
+                    <g class="aisle" data-aisle="06" tabindex="0" role="button">
+                        <rect x="181" y="197" width="62" height="94"/>
+                        <text x="212" y="249" text-anchor="middle">06</text>
+                    </g>
+
+                    <!-- Corredores 07 a 12 -->
+                    <g class="aisle" data-aisle="07" tabindex="0" role="button">
+                        <rect x="277" y="87" width="62" height="94"/>
+                        <text x="308" y="139" text-anchor="middle">07</text>
+                    </g>
+
+                    <g class="aisle" data-aisle="08" tabindex="0" role="button">
+                        <rect x="350" y="87" width="62" height="94"/>
+                        <text x="381" y="139" text-anchor="middle">08</text>
+                    </g>
+
+                    <g class="aisle" data-aisle="09" tabindex="0" role="button">
+                        <rect x="423" y="87" width="62" height="94"/>
+                        <text x="454" y="139" text-anchor="middle">09</text>
+                    </g>
+
+                    <g class="aisle" data-aisle="10" tabindex="0" role="button">
+                        <rect x="277" y="197" width="62" height="94"/>
+                        <text x="308" y="249" text-anchor="middle">10</text>
+                    </g>
+
+                    <g class="aisle" data-aisle="11" tabindex="0" role="button">
+                        <rect x="350" y="197" width="62" height="94"/>
+                        <text x="381" y="249" text-anchor="middle">11</text>
+                    </g>
+
+                    <g class="aisle" data-aisle="12" tabindex="0" role="button">
+                        <rect x="423" y="197" width="62" height="94"/>
+                        <text x="454" y="249" text-anchor="middle">12</text>
+                    </g>
+
+                    <rect x="22" y="309" width="476" height="55" rx="7" fill="#e5e9ee"/>
+                    <text x="260" y="341" text-anchor="middle" fill="#596473" font-size="10">CAIXAS · ATENDIMENTO · SAÍDA</text>
+
+                </svg>
+
+            </div>
+
+            <div class="map-legend">
+                <span><i class="swatch"></i> Outros corredores</span>
+                <span><i class="swatch active"></i> Corredor selecionado</span>
+            </div>
+
+            <div class="location-box">
+                <div class="pin">⌖</div>
+                <div>
+                    <strong id="selectedLocationTitle">Nenhum corredor selecionado</strong>
+                    <p id="selectedLocationDescription">A localização do produto aparecerá aqui após uma busca.</p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+</section>
+
+<!-- PRODUTOS -->
+<section class="products">
+
+    <div class="products-head">
+        <div>
+            <h2 id="resultsTitle">Produtos recomendados</h2>
+            <p class="sub">Catálogo demonstrativo: preços e estoques são fictícios, não representam dados reais de loja.</p>
+        </div>
+
+        <span class="count" id="resultCount"></span>
+    </div>
+
+    <div class="grid" id="productsGrid">
+        <div class="empty">
+            Os produtos encontrados aparecerão aqui depois que você conversar com o assistente.
+        </div>
+    </div>
+
+</section>
+
+</main>
+
+<footer>
+    LeRoy AI Assistant · MVP acadêmico · Mapa ilustrativo para demonstração
+</footer>
+
+<script>
+
+const grid = document.getElementById("productsGrid");
+const messages = document.getElementById("messages");
+const input = document.getElementById("searchInput");
+const form = document.getElementById("searchForm");
+const sendButton = document.getElementById("sendButton");
+
+const resultsTitle = document.getElementById("resultsTitle");
+const resultCount = document.getElementById("resultCount");
+
+const mapHint = document.getElementById("mapHint");
+const selectedLocationTitle = document.getElementById("selectedLocationTitle");
+const selectedLocationDescription = document.getElementById("selectedLocationDescription");
+
+const aisles = [...document.querySelectorAll(".aisle[data-aisle]")];
+
+let currentProducts = [];
+let catalogProductsPromise = null;
+let aisleSelectionRequest = 0;
+
+// Evita inserir HTML não confiável diretamente na página.
+function esc(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    }[char]));
+}
+
+// Formata os preços em reais.
+function money(value) {
+    const number = Number(value);
+
+    return Number.isFinite(number)
+        ? number.toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL"
+        })
+        : "Preço indisponível";
+}
+
+// Padroniza o número do corredor.
+function normalizeAisle(value) {
+    const match = String(value ?? "").match(/\d+/);
+
+    return match ? match[0].padStart(2, "0") : null;
+}
+
+// Adiciona mensagens no chat.
+function addMessage(text, type = "assistant") {
+    const element = document.createElement("div");
+
+    element.className = "message " + type;
+    element.textContent = text;
+
+    messages.appendChild(element);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+// Limpa a seleção do mapa.
+function clearMap() {
+    aisleSelectionRequest++;
+
+    aisles.forEach(aisle => {
+        aisle.classList.remove("selected");
+    });
+
+    selectedLocationTitle.textContent = "Nenhum corredor selecionado";
+
+    selectedLocationDescription.textContent =
+        "A localização do produto aparecerá aqui após uma busca.";
+
+    mapHint.textContent =
+        "Faça uma busca ou clique em um corredor para ver todos os produtos disponíveis nele.";
+}
+
+// Destaca um corredor no mapa.
+function highlightAisle(corridor, section = "", shelf = "", productName = "") {
+
+    const id = normalizeAisle(corridor);
+
+    aisles.forEach(aisle => {
+        aisle.classList.toggle("selected", aisle.dataset.aisle === id);
+    });
+
+    if (!id) {
+        selectedLocationTitle.textContent = "Corredor não cadastrado";
+
+        selectedLocationDescription.textContent = productName
+            ? `Não há corredor válido cadastrado para ${productName}.`
+            : "Este produto não possui corredor cadastrado.";
+
+        mapHint.textContent =
+            "O produto foi encontrado, mas não há corredor válido para destacar.";
+
+        return;
+    }
+
+    selectedLocationTitle.textContent = `Corredor ${id} selecionado`;
+
+    const extra = [
+        section ? `Setor: ${section}` : "",
+        shelf ? `Prateleira: ${shelf}` : ""
+    ].filter(Boolean).join(" · ");
+
+    selectedLocationDescription.textContent = [
+        productName || "Localização do produto",
+        extra
+    ].filter(Boolean).join(" — ");
+
+    mapHint.textContent =
+        `Localização destacada: corredor ${id}. A planta é ilustrativa e representa a organização simulada da loja.`;
+}
+
+// Renderiza os produtos retornados pelo backend.
+function renderProducts(products) {
+
+    currentProducts = Array.isArray(products) ? products : [];
+
+    resultCount.textContent = currentProducts.length
+        ? `${currentProducts.length} produto(s)`
+        : "";
+
+    if (!currentProducts.length) {
+
+        grid.innerHTML = `
+            <div class="empty">
+                Não encontrei produtos disponíveis para essa necessidade.
+                Tente explicar de outra forma.
+            </div>
+        `;
+
+        clearMap();
+        return;
+    }
+
+    grid.innerHTML = currentProducts.map((product, index) => {
+
+        const aisle = normalizeAisle(product.corredor);
+
+        const location = [
+            aisle ? `Corredor ${aisle}` : "",
+            product.secao ? esc(product.secao) : "",
+            product.prateleira ? `Prateleira ${esc(product.prateleira)}` : ""
+        ].filter(Boolean).join(" · ");
+
+        return `
+            <article class="product">
+
+                <div class="category">
+                    ${esc(product.categoria || "Produto")}
+                </div>
+
+                <h3>${esc(product.nome || "Produto sem nome")}</h3>
+
+                <div class="description">
+                    ${esc(product.descricao || "Sem descrição disponível.")}
+                </div>
+
+                <div class="price">
+                    ${money(product.preco)}
+                </div>
+
+                <div class="stock">
+                    ${Number(product.quantidade) > 0
+                        ? `Estoque demonstrativo: ${esc(product.quantidade)} unidade(s)`
+                        : "Sem estoque no catálogo demonstrativo"}
+                </div>
+
+                <div class="product-location">
+                    ${location || "Localização não cadastrada"}
+                </div>
+
+                <button class="locate" type="button" data-index="${index}">
+                    Mostrar no mapa
+                </button>
+
+            </article>
+        `;
+
+    }).join("");
+
+    // Destaca automaticamente o corredor do primeiro produto.
+    const first = currentProducts[0];
+
+    highlightAisle(
+        first.corredor,
+        first.secao,
+        first.prateleira,
+        first.nome
+    );
+}
+
+// Envia a mensagem para o backend Java/Gemini.
+async function sendMessage(term) {
+
+    const message = term.trim();
+
+    if (!message || sendButton.disabled) return;
+
+    addMessage(message, "user");
+
+    input.value = "";
+    sendButton.disabled = true;
+    sendButton.textContent = "Consultando...";
+
+    resultsTitle.textContent = "Buscando produtos...";
+    resultCount.textContent = "";
+
+    grid.innerHTML = `
+        <div class="empty">
+            O assistente está analisando sua necessidade...
+        </div>
+    `;
+
+    clearMap();
+
+    try {
+
+        // Mantém o endpoint original do backend.
+        const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                mensagem: message
+            })
+        });
+
+        const responseText = await response.text();
+
+        if (!responseText.trim()) {
+            throw new Error(
+                `Resposta vazia do servidor (HTTP ${response.status}).`
+            );
+        }
+
+        let data;
+
+        try {
+            data = JSON.parse(responseText);
+        } catch {
+            throw new Error(
+                "Resposta inválida do servidor: " +
+                responseText.slice(0, 220)
+            );
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                data.detalhe ||
+                data.erro ||
+                `Erro HTTP ${response.status}`
+            );
+        }
+
+        const products = Array.isArray(data.produtos)
+            ? data.produtos
+            : [];
+
+        renderProducts(products);
+
+        resultsTitle.textContent = products.length
+            ? "Produtos encontrados"
+            : "Nenhum produto encontrado";
+
+        addMessage(
+            data.resposta ||
+            (products.length
+                ? `Encontrei ${products.length} produto(s).`
+                : "Não encontrei produtos disponíveis.")
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        resultsTitle.textContent =
+            "Não foi possível buscar os produtos";
+
+        grid.innerHTML = `
+            <div class="empty">
+                ${esc(error.message || "Ocorreu um erro.")}
+            </div>
+        `;
+
+        addMessage(
+            error.message || "Não consegui concluir a busca agora.",
+            "error"
+        );
+
+    } finally {
+
+        sendButton.disabled = false;
+        sendButton.textContent = "Enviar mensagem";
+        input.focus();
+
+    }
+}
+
+// Envio pelo formulário.
+form.addEventListener("submit", event => {
+    event.preventDefault();
+    sendMessage(input.value);
+});
+
+// Botões de sugestões.
+document.querySelectorAll(".suggestions button").forEach(button => {
+    button.addEventListener("click", () => {
+        sendMessage(button.dataset.query);
+    });
+});
+
+// Botão para localizar cada produto no mapa.
+grid.addEventListener("click", event => {
+
+    const button = event.target.closest("[data-index]");
+
+    if (!button) return;
+
+    const product = currentProducts[Number(button.dataset.index)];
+
+    if (product) {
+        highlightAisle(
+            product.corredor,
+            product.secao,
+            product.prateleira,
+            product.nome
+        );
+    }
+});
+
+async function loadCatalogProducts() {
+
+    if (!catalogProductsPromise) {
+        catalogProductsPromise = fetch("/api/products")
+            .then(async response => {
+                if (!response.ok) {
+                    throw new Error(
+                        `Não foi possível carregar o catálogo (HTTP ${response.status}).`
+                    );
+                }
+
+                const products = await response.json();
+
+                if (!Array.isArray(products)) {
+                    throw new Error("O servidor retornou um catálogo inválido.");
+                }
+
+                return products;
+            })
+            .catch(error => {
+                catalogProductsPromise = null;
+                throw error;
+            });
+    }
+
+    return catalogProductsPromise;
+}
+
+// Exibe todos os produtos disponíveis no corredor selecionado.
+async function selectAisle(element) {
+
+    const id = element.dataset.aisle;
+    const requestId = ++aisleSelectionRequest;
+
+    aisles.forEach(aisle => {
+        aisle.classList.toggle("selected", aisle === element);
+    });
+
+    selectedLocationTitle.textContent =
+        `Corredor ${id} selecionado`;
+    selectedLocationDescription.textContent =
+        "Carregando os produtos disponíveis neste corredor...";
+    mapHint.textContent = `Consultando os produtos do corredor ${id}.`;
+
+    try {
+        const catalog = await loadCatalogProducts();
+
+        if (requestId !== aisleSelectionRequest) return;
+
+        const found = catalog.filter(product =>
+            normalizeAisle(product.corredor) === id &&
+            Number(product.quantidade) > 0
+        );
+
+        renderProducts(found);
+
+        selectedLocationTitle.textContent =
+            `Corredor ${id} selecionado`;
+        selectedLocationDescription.textContent = found.length
+            ? `${found.length} produto(s) disponível(is) neste corredor; opções exibidas abaixo.`
+            : "Nenhum produto disponível está cadastrado neste corredor.";
+        mapHint.textContent = found.length
+            ? `${found.length} produto(s) disponível(is) no corredor ${id}.`
+            : `Corredor ${id} selecionado. Não há produtos disponíveis cadastrados nele.`;
+        resultsTitle.textContent = found.length
+            ? `Produtos disponíveis no corredor ${id}`
+            : `Nenhum produto disponível no corredor ${id}`;
+    } catch (error) {
+        if (requestId !== aisleSelectionRequest) return;
+
+        console.error(error);
+        resultsTitle.textContent =
+            "Não foi possível carregar os produtos do corredor";
+        resultCount.textContent = "";
+        grid.innerHTML = `
+            <div class="empty">
+                ${esc(error.message || "Não foi possível consultar o catálogo.")}
+            </div>
+        `;
+        selectedLocationDescription.textContent =
+            "Não foi possível consultar os produtos deste corredor.";
+        mapHint.textContent =
+            "Tente selecionar o corredor novamente para repetir a consulta.";
+    }
+}
+
+// Eventos de clique e teclado no mapa.
+aisles.forEach(aisle => {
+
+    aisle.addEventListener("click", () => {
+        selectAisle(aisle);
+    });
+
+    aisle.addEventListener("keydown", event => {
+
+        if (event.key === "Enter" || event.key === " ") {
+
+            event.preventDefault();
+            selectAisle(aisle);
+
+        }
+
+    });
+
+});
+
+// Botão para limpar o mapa.
+document.getElementById("resetMapButton")
+    .addEventListener("click", clearMap);
+
+// Verifica se o backend está online.
+fetch("/api/health")
+    .then(response => {
+
+        if (!response.ok) throw new Error();
+
+        document.getElementById("serverStatus").textContent =
+            "● Servidor online";
+
+    })
+    .catch(() => {
+
+        document.getElementById("serverStatus").textContent =
+            "● Servidor indisponível";
+
+    });
+
+</script>
+
+</body>
+</html>
