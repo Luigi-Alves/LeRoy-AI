@@ -2,6 +2,8 @@ package com.leroyai.util;
 
 import com.google.gson.Gson;
 
+import java.lang.reflect.Type;
+
 public final class JsonUtil {
 
     private static final Gson GSON = new Gson();
@@ -14,6 +16,10 @@ public final class JsonUtil {
     }
 
     public static <T> T fromJson(String json, Class<T> type) {
+        return GSON.fromJson(json, type);
+    }
+
+    public static <T> T fromJson(String json, Type type) {
         return GSON.fromJson(json, type);
     }
 }

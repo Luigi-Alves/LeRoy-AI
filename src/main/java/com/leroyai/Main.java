@@ -4,8 +4,10 @@ package com.leroyai;
 import com.google.gson.JsonObject;
 
 import com.leroyai.controller.ChatController;
+import com.leroyai.controller.InteractionController;
 import com.leroyai.model.Produto;
 import com.leroyai.service.GeminiService;
+import com.leroyai.service.InteractionTrackingService;
 import com.leroyai.service.ProdutoService;
 import com.leroyai.util.JsonUtil;
 
@@ -18,7 +20,9 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 
 public class Main {
@@ -36,8 +40,18 @@ public class Main {
 
         // Serviço de produtos
         ProdutoService produtoService = new ProdutoService();
+        InteractionTrackingService trackingService =
+            new InteractionTrackingService(
+                Path.of("data", "interactions.json")
+            );
         ChatController chatController =
-            new ChatController(produtoService, new GeminiService());
+            new ChatController(
+                produtoService,
+                new GeminiService(),
+                trackingService
+            );
+        InteractionController interactionController =
+            new InteractionController(trackingService, produtoService);
 
         
 
@@ -109,6 +123,14 @@ public class Main {
                 List<Produto> produtos =
                     produtoService.buscarProdutos(termo);
 
+                String sessionId =
+                    exchange.getRequestHeaders().getFirst("X-Session-Id");
+                if (!InteractionTrackingService.isValidUuid(sessionId)) {
+                    sessionId = UUID.randomUUID().toString();
+                }
+                exchange.getResponseHeaders().set("X-Session-Id", sessionId);
+                recordSearch(trackingService, sessionId, produtos);
+
                 sendResponse(
                     exchange,
                     200,
@@ -131,7 +153,14 @@ public class Main {
 
         server.createContext("/api/chat", chatController::handle);
 
-        
+        server.createContext("/api/analytics/events", exchange -> {
+            if (!exchange.getRequestURI().getPath()
+                    .equals("/api/analytics/events")) {
+                sendResponse(exchange, 404, "{\"erro\":\"Rota não encontrada.\"}");
+                return;
+            }
+            interactionController.handleEvent(exchange);
+        });
 
         server.createContext("/", exchange -> {
 
@@ -144,58 +173,7 @@ public class Main {
                 return;
             }
 
-            try {
-
-                InputStream input = Main.class
-                    .getResourceAsStream("/static/index.html");
-
-                if (input == null) {
-
-                    String mensagem =
-                        "Arquivo index.html não encontrado.";
-
-                    exchange.sendResponseHeaders(404, 0);
-
-                    try (OutputStream output =
-                             exchange.getResponseBody()) {
-
-                        output.write(
-                            mensagem.getBytes(StandardCharsets.UTF_8)
-                        );
-                    }
-
-                    return;
-                }
-
-                byte[] html;
-
-                try (input) {
-                    html = input.readAllBytes();
-                }
-
-                exchange.getResponseHeaders().set(
-                    "Content-Type",
-                    "text/html; charset=UTF-8"
-                );
-
-                exchange.sendResponseHeaders(200, html.length);
-
-                try (OutputStream output =
-                         exchange.getResponseBody()) {
-
-                    output.write(html);
-                }
-
-            } catch (Exception e) {
-
-                e.printStackTrace();
-
-                sendResponse(
-                    exchange,
-                    500,
-                    "{\"erro\":\"Erro ao carregar a página inicial.\"}"
-                );
-            }
+            serveHtml(exchange, "/static/index.html");
         });
 
         
@@ -211,7 +189,62 @@ public class Main {
         );
     }
 
-    
+    private static void recordSearch(
+            InteractionTrackingService trackingService,
+            String sessionId,
+            List<Produto> products
+    ) {
+        try {
+            trackingService.recordSearch(sessionId, products);
+        } catch (IOException e) {
+            System.err.println("Não foi possível registrar a pesquisa.");
+            e.printStackTrace();
+        }
+    }
+
+    private static void serveHtml(
+            HttpExchange exchange,
+            String resourcePath
+    ) throws IOException {
+        byte[] html;
+        try (InputStream input = Main.class.getResourceAsStream(resourcePath)) {
+            if (input == null) {
+                sendResponse(
+                    exchange,
+                    404,
+                    "{\"erro\":\"Página não encontrada.\"}"
+                );
+                return;
+            }
+            html = input.readAllBytes();
+        } catch (IOException e) {
+            System.err.println("Não foi possível carregar a página " + resourcePath);
+            e.printStackTrace();
+            sendResponse(
+                exchange,
+                500,
+                "{\"erro\":\"Erro ao carregar a página.\"}"
+            );
+            return;
+        }
+
+        exchange.getResponseHeaders().set(
+            "Content-Type",
+            "text/html; charset=UTF-8"
+        );
+        exchange.getResponseHeaders().set(
+            "X-Content-Type-Options",
+            "nosniff"
+        );
+        exchange.getResponseHeaders().set(
+            "Cache-Control",
+            "no-store"
+        );
+        exchange.sendResponseHeaders(200, html.length);
+        try (OutputStream output = exchange.getResponseBody()) {
+            output.write(html);
+        }
+    }
 
     private static void sendResponse(
             HttpExchange exchange,

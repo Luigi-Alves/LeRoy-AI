@@ -291,6 +291,43 @@ input:focus {
     cursor: wait;
 }
 
+.privacy-note {
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.5;
+    margin: 9px 2px 0;
+}
+
+.feedback {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--muted);
+    font-size: 10px;
+    align-self: flex-start;
+}
+
+.feedback button {
+    border: 1px solid var(--line);
+    background: white;
+    border-radius: 20px;
+    padding: 6px 9px;
+    color: #505967;
+    font: 600 10px 'DM Sans', sans-serif;
+    cursor: pointer;
+}
+
+.feedback button:hover,
+.feedback button:focus-visible {
+    border-color: #ffb98f;
+    color: var(--orange-dark);
+}
+
+.feedback button:disabled {
+    opacity: .6;
+    cursor: default;
+}
+
 /* MAPA */
 
 .map-body {
@@ -739,6 +776,10 @@ footer {
                 >
                 <button class="send" id="sendButton">Enviar mensagem</button>
             </form>
+            <p class="privacy-note">
+                Registramos anonimamente pesquisas e interações para melhorar as recomendações.
+                As mensagens completas não são armazenadas para análise.
+            </p>
         </div>
 
     </section>
@@ -971,9 +1012,64 @@ const aisles = [...document.querySelectorAll(".aisle[data-aisle]")];
 const routeLine = document.getElementById("routeLine");
 const destinationMarker = document.getElementById("destinationMarker");
 
+function getAnonymousSessionId() {
+    const storageKey = "leroy-anonymous-session";
+
+    try {
+        const existing = sessionStorage.getItem(storageKey);
+        if (existing && /^[0-9a-f-]{36}$/i.test(existing)) {
+            return existing;
+        }
+    } catch (error) {
+        console.warn("Armazenamento de sessão indisponível.", error);
+    }
+
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = [...bytes].map(value => value.toString(16).padStart(2, "0"));
+    const sessionId = [
+        hex.slice(0, 4).join(""),
+        hex.slice(4, 6).join(""),
+        hex.slice(6, 8).join(""),
+        hex.slice(8, 10).join(""),
+        hex.slice(10, 16).join("")
+    ].join("-");
+
+    try {
+        sessionStorage.setItem(storageKey, sessionId);
+    } catch (error) {
+        console.warn("Não foi possível manter a sessão anônima.", error);
+    }
+
+    return sessionId;
+}
+
+const anonymousSessionId = getAnonymousSessionId();
 let currentProducts = [];
+let currentInteractionId = null;
 let catalogProductsPromise = null;
 let aisleSelectionRequest = 0;
+
+function recordAnalyticsEvent(event) {
+    return fetch("/api/analytics/events", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-Session-Id": anonymousSessionId
+        },
+        body: JSON.stringify(event)
+    }).then(response => {
+        if (!response.ok) {
+            throw new Error(`Analytics indisponível (HTTP ${response.status}).`);
+        }
+        return true;
+    }).catch(error => {
+        console.warn("Não foi possível registrar a interação.", error);
+        return false;
+    });
+}
 
 
 function esc(value) {
@@ -1101,9 +1197,10 @@ function highlightAisle(corridor, section = "", shelf = "", productName = "") {
 }
 
 
-function renderProducts(products) {
+function renderProducts(products, interactionId = null) {
 
     currentProducts = Array.isArray(products) ? products : [];
+    currentInteractionId = interactionId;
 
     resultCount.textContent = currentProducts.length
         ? `${currentProducts.length} produto(s)`
@@ -1209,7 +1306,8 @@ async function sendMessage(term) {
         const response = await fetch("/api/chat", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "X-Session-Id": anonymousSessionId
             },
             body: JSON.stringify({
                 mensagem: message
@@ -1246,7 +1344,7 @@ async function sendMessage(term) {
             ? data.produtos
             : [];
 
-        renderProducts(products);
+        renderProducts(products, data.interactionId);
 
         resultsTitle.textContent = products.length
             ? "Produtos encontrados"
@@ -1258,6 +1356,10 @@ async function sendMessage(term) {
                 ? `Encontrei ${products.length} produto(s).`
                 : "Não encontrei produtos disponíveis.")
         );
+
+        if (products.length && data.interactionId) {
+            addRecommendationFeedback(data.interactionId);
+        }
 
     } catch (error) {
 
@@ -1286,6 +1388,35 @@ async function sendMessage(term) {
     }
 }
 
+function addRecommendationFeedback(interactionId) {
+    const feedback = document.createElement("div");
+    feedback.className = "feedback";
+    feedback.dataset.interactionId = interactionId;
+    feedback.innerHTML = `
+        Esta recomendação ajudou?
+        <button type="button" data-rating="positive" aria-label="Sim, ajudou">👍</button>
+        <button type="button" data-rating="negative" aria-label="Não ajudou">👎</button>
+    `;
+    messages.appendChild(feedback);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+messages.addEventListener("click", event => {
+    const button = event.target.closest("[data-rating]");
+    if (!button || button.disabled) return;
+
+    const feedback = button.closest(".feedback");
+    recordAnalyticsEvent({
+        eventType: "RATING",
+        interactionId: feedback.dataset.interactionId,
+        rating: button.dataset.rating
+    }).then(saved => {
+        feedback.textContent = saved
+            ? "Obrigado pela avaliação."
+            : "Não foi possível registrar sua avaliação.";
+    });
+});
+
 // Envio pelo formulário.
 form.addEventListener("submit", event => {
     event.preventDefault();
@@ -1309,6 +1440,11 @@ grid.addEventListener("click", event => {
     const product = currentProducts[Number(button.dataset.index)];
 
     if (product) {
+        recordAnalyticsEvent({
+            eventType: "PRODUCT_SELECTION",
+            productId: product.id,
+            interactionId: currentInteractionId
+        });
         highlightAisle(
             product.corredor,
             product.secao,

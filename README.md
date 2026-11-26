@@ -16,8 +16,16 @@ O objetivo é facilitar a jornada de compra, permitindo que o cliente encontre p
 - **Localização:** apresentação do corredor, seção e prateleira de cada produto.
 - **Mapa interativo:** mapa interno ilustrativo que permite selecionar corredores e visualizar os produtos disponíveis em cada um.
 - **Integração com o mapa:** buscas destacam automaticamente a localização do primeiro produto recomendado.
+- **Coleta anônima de interações:** pesquisas, mensagens, produtos recomendados e selecionados no mapa, além das avaliações das recomendações.
 - **Tratamento de estoque:** produtos sem estoque são identificados no catálogo e não são recomendados pelo chat.
 - **Orientação técnica:** respostas cautelosas sobre dúvidas de instalação e compatibilidade, sem inventar especificações que não estejam disponíveis no catálogo.
+
+### Privacidade e armazenamento das interações
+
+- Os eventos são salvos em `data/interactions.json`, em formato JSON, e permanecem disponíveis após reiniciar o servidor. O diretório `data/` é ignorado pelo Git.
+- O navegador cria um identificador UUID anônimo por sessão da aba. Não são coletados nome, e-mail ou telefone como campos do evento.
+- O tópico da pesquisa é classificado pelas categorias dos produtos encontrados (ou marcado como “sem correspondência”); o texto livre digitado não é persistido. Também são registrados identificadores e nomes de produtos do catálogo, avaliações, data/hora e identificador anônimo.
+- Uma falha ao gravar os eventos não altera a resposta funcional do chat; o erro é registrado no log do servidor.
 
 ## Dados demonstrativos
 
@@ -56,17 +64,20 @@ LeRoy-AI/
 │       ├── java/com/leroyai/
 │       │   ├── Main.java
 │       │   ├── controller/
+│       │   │   ├── InteractionController.java
 │       │   │   └── ChatController.java
 │       │   ├── model/
 │       │   │   └── Produto.java
 │       │   ├── service/
 │       │   │   ├── GeminiService.java
+│       │   │   ├── InteractionTrackingService.java
 │       │   │   └── ProdutoService.java
 │       │   └── util/
 │       │       └── JsonUtil.java
 │       └── resources/
 │           └── static/
 │               └── index.html
+├── data/
 ├── pom.xml
 └── README.md
 ```
@@ -75,8 +86,10 @@ LeRoy-AI/
 
 - **Main.java:** inicialização do servidor e registro dos endpoints.
 - **ChatController.java:** recebimento e processamento das requisições do chat.
+- **InteractionController.java:** valida e registra eventos de seleção/avaliação.
 - **Produto.java:** representação dos produtos.
 - **GeminiService.java:** integração com a inteligência artificial Gemini.
+- **InteractionTrackingService.java:** persistência dos eventos em JSON.
 - **ProdutoService.java:** gerenciamento do catálogo demonstrativo e pesquisa de produtos.
 - **JsonUtil.java:** funções auxiliares para manipulação de JSON.
 
@@ -95,8 +108,7 @@ O catálogo demonstrativo é criado diretamente pelo `ProdutoService`. O projeto
 Configure sua chave como variável de ambiente `GEMINI_API_KEY`.
 
 A chave não deve ser inserida diretamente no código, no frontend ou em arquivos versionados.
-O arquivo `.env.example` contém apenas placeholders e serve como referência; o Java
-não carrega arquivos `.env` automaticamente.
+O Java lê a variável do ambiente do processo e não carrega arquivos `.env` automaticamente.
 
 **Linux/macOS:**
 
@@ -140,7 +152,10 @@ A chamada ao Gemini possui timeout de 15 segundos e uma tentativa, evitando que 
 | GET | `/api/products` | Retorna o catálogo demonstrativo, incluindo quantidades. |
 | GET | `/api/search?q=torneira` | Pesquisa produtos disponíveis. |
 | POST | `/api/chat` | Interpreta mensagens em linguagem natural e recomenda produtos. |
+| POST | `/api/analytics/events` | Registra seleções e avaliações; recebe o identificador anônimo no cabeçalho `X-Session-Id`. |
 | GET | `/` | Disponibiliza o frontend. |
+
+O endpoint de coleta aceita somente `PRODUCT_SELECTION` e `RATING`. Pesquisas, mensagens, categorias e recomendações são registradas diretamente no backend. Os dados não são expostos por uma interface ou endpoint de consulta.
 
 ### Exemplo de requisição para o chat
 
@@ -158,7 +173,7 @@ A resposta contém os campos:
 - `termoBusca`: termo identificado para a pesquisa.
 - `produtos`: lista de produtos encontrados.
 
-
+- `interactionId`: identificador técnico da recomendação para associar uma avaliação.
 
 
 ## Equipe e Entrega
@@ -170,9 +185,3 @@ A resposta contém os campos:
 - RM561811 — Bruno Hemsi Fischman
 - RM561781 — Levi Kazuo Calandra Schmidt Aoshima
 - RM561814 — Maria Luiza Miyazaki Braz de Paula
-
-**Links da entrega:**
-
-- **Deploy:** COLE_AQUI_O_LINK_DO_DEPLOY
-- **Vídeo Pitch:** COLE_AQUI_O_LINK_DO_VIDEO
-

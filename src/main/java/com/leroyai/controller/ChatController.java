@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.leroyai.model.Produto;
 import com.leroyai.service.GeminiService;
+import com.leroyai.service.InteractionTrackingService;
 import com.leroyai.service.ProdutoService;
 import com.leroyai.util.JsonUtil;
 import com.sun.net.httpserver.HttpExchange;
@@ -13,18 +14,22 @@ import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 public class ChatController {
 
     private final ProdutoService produtoService;
     private final GeminiService geminiService;
+    private final InteractionTrackingService trackingService;
 
     public ChatController(
             ProdutoService produtoService,
-            GeminiService geminiService
+            GeminiService geminiService,
+            InteractionTrackingService trackingService
     ) {
         this.produtoService = produtoService;
         this.geminiService = geminiService;
+        this.trackingService = trackingService;
     }
 
     public void handle(HttpExchange exchange) throws IOException {
@@ -36,6 +41,8 @@ public class ChatController {
 
         int statusCode;
         Object response;
+        String trackingSessionId = null;
+        String trackingInteractionId = null;
 
         try {
             String body = new String(
@@ -52,7 +59,39 @@ public class ChatController {
                 statusCode = 400;
                 response = error("Envie uma mensagem.");
             } else {
-                response = processMessage(mensagem);
+                String interactionId = UUID.randomUUID().toString();
+                String sessionId =
+                    exchange.getRequestHeaders().getFirst("X-Session-Id");
+                if (!InteractionTrackingService.isValidUuid(sessionId)) {
+                    sessionId = UUID.randomUUID().toString();
+                    exchange.getResponseHeaders().set(
+                        "X-Session-Id",
+                        sessionId
+                    );
+                }
+                trackingSessionId = sessionId;
+                trackingInteractionId = interactionId;
+                try {
+                    trackingService.recordChatInteraction(
+                        sessionId,
+                        interactionId
+                    );
+                } catch (IOException e) {
+                    logTrackingFailure(e);
+                }
+
+                ChatResponse chatResponse =
+                    processMessage(mensagem, interactionId);
+                try {
+                    trackingService.recordChatResults(
+                        sessionId,
+                        interactionId,
+                        chatResponse.produtos()
+                    );
+                } catch (IOException e) {
+                    logTrackingFailure(e);
+                }
+                response = chatResponse;
                 statusCode = 200;
             }
         } catch (JsonParseException e) {
@@ -61,6 +100,17 @@ public class ChatController {
         } catch (Exception e) {
             System.err.println("ERRO AO PROCESSAR MENSAGEM:");
             e.printStackTrace();
+
+            if (trackingSessionId != null) {
+                try {
+                    trackingService.recordChatSearchFailure(
+                        trackingSessionId,
+                        trackingInteractionId
+                    );
+                } catch (IOException trackingException) {
+                    logTrackingFailure(trackingException);
+                }
+            }
 
             statusCode = 500;
             response = error(
@@ -71,12 +121,16 @@ public class ChatController {
         sendJson(exchange, statusCode, response);
     }
 
-    private ChatResponse processMessage(String mensagem) {
+    private ChatResponse processMessage(
+            String mensagem,
+            String interactionId
+    ) {
         if (isListAllRequest(mensagem)) {
             return new ChatResponse(
                 "Aqui estão todos os produtos disponíveis.",
                 "todos os produtos disponíveis",
-                produtoService.listarProdutosDisponiveis()
+                produtoService.listarProdutosDisponiveis(),
+                interactionId
             );
         }
 
@@ -92,7 +146,8 @@ public class ChatController {
         return new ChatResponse(
             buildResponseMessage(mensagem, produtos),
             termoBusca,
-            produtos
+            produtos,
+            interactionId
         );
     }
 
@@ -207,13 +262,19 @@ public class ChatController {
         }
     }
 
+    private void logTrackingFailure(IOException exception) {
+        System.err.println("Não foi possível registrar a interação.");
+        exception.printStackTrace();
+    }
+
     private record ChatRequest(String mensagem) {
     }
 
     private record ChatResponse(
             String resposta,
             String termoBusca,
-            List<Produto> produtos
+            List<Produto> produtos,
+            String interactionId
     ) {
     }
 }
