@@ -93,20 +93,22 @@ O catálogo demonstrativo é criado diretamente pelo `ProdutoService`. O projeto
 
 ### Configuração da API Gemini
 
-Configure sua chave como variável de ambiente `GOOGLE_API_KEY`.
+Configure sua chave como variável de ambiente `GEMINI_API_KEY`.
 
 A chave não deve ser inserida diretamente no código, no frontend ou em arquivos versionados.
+O arquivo `.env.example` contém apenas placeholders e serve como referência; o Java
+não carrega arquivos `.env` automaticamente.
 
 **Linux/macOS:**
 
 ```bash
-export GOOGLE_API_KEY="sua-chave"
+export GEMINI_API_KEY="sua-chave"
 ```
 
 **Windows PowerShell:**
 
 ```powershell
-$env:GOOGLE_API_KEY = "sua-chave"
+$env:GEMINI_API_KEY = "sua-chave"
 ```
 
 ### Executando o projeto
@@ -156,6 +158,8 @@ A resposta contém os campos:
 - `resposta`: mensagem apresentada ao cliente.
 - `termoBusca`: termo identificado para a pesquisa.
 - `produtos`: lista de produtos encontrados.
+
+<<<<<<< HEAD
 
 
 ## Equipe e Entrega

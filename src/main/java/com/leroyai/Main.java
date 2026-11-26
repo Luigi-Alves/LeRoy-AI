@@ -39,10 +39,7 @@ public class Main {
         ChatController chatController =
             new ChatController(produtoService, new GeminiService());
 
-        // -----------------------------------------
-        // 1. Verificar se o servidor está funcionando
-        // GET /api/health
-        // -----------------------------------------
+        
 
         server.createContext("/api/health", exchange -> {
 
@@ -57,10 +54,7 @@ public class Main {
             sendResponse(exchange, 200, JsonUtil.toJson(response));
         });
 
-        // -----------------------------------------
-        // 2. Listar produtos do catálogo demonstrativo
-        // GET /api/products
-        // -----------------------------------------
+        
 
         server.createContext("/api/products", exchange -> {
 
@@ -87,10 +81,7 @@ public class Main {
             }
         });
 
-        // -----------------------------------------
-        // 3. Buscar produtos pelo termo informado
-        // GET /api/search?q=tinta
-        // -----------------------------------------
+        
 
         server.createContext("/api/search", exchange -> {
 
@@ -136,17 +127,11 @@ public class Main {
             }
         });
 
-        // -----------------------------------------
-        // 4. Chat com inteligência artificial
-        // POST /api/chat
-        // -----------------------------------------
+        
 
         server.createContext("/api/chat", chatController::handle);
 
-        // -----------------------------------------
-        // 5. Página inicial
-        // GET /
-        // -----------------------------------------
+        
 
         server.createContext("/", exchange -> {
 
@@ -213,9 +198,7 @@ public class Main {
             }
         });
 
-        // -----------------------------------------
-        // Inicialização do servidor
-        // -----------------------------------------
+        
 
         server.setExecutor(
             Executors.newFixedThreadPool(10)
@@ -228,9 +211,7 @@ public class Main {
         );
     }
 
-    // -----------------------------------------
-    // Método para enviar respostas JSON
-    // -----------------------------------------
+    
 
     private static void sendResponse(
             HttpExchange exchange,

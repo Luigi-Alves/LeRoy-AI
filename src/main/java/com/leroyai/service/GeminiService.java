@@ -19,11 +19,11 @@ public class GeminiService {
                 current = client;
 
                 if (current == null) {
-                    String apiKey = System.getenv("GOOGLE_API_KEY");
+                    String apiKey = System.getenv("GEMINI_API_KEY");
 
                     if (apiKey == null || apiKey.isBlank()) {
                         throw new IllegalStateException(
-                            "A variável GOOGLE_API_KEY não foi configurada."
+                            "A variável GEMINI_API_KEY não foi configurada."
                         );
                     }
 

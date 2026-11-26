@@ -975,7 +975,7 @@ let currentProducts = [];
 let catalogProductsPromise = null;
 let aisleSelectionRequest = 0;
 
-// Evita inserir HTML não confiável diretamente na página.
+
 function esc(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({
         "&": "&amp;",
@@ -986,7 +986,7 @@ function esc(value) {
     }[char]));
 }
 
-// Formata os preços em reais.
+
 function money(value) {
     const number = Number(value);
 
@@ -998,14 +998,14 @@ function money(value) {
         : "Preço indisponível";
 }
 
-// Padroniza o número do corredor.
+
 function normalizeAisle(value) {
     const match = String(value ?? "").match(/\d+/);
 
     return match ? match[0].padStart(2, "0") : null;
 }
 
-// Adiciona mensagens no chat.
+
 function addMessage(text, type = "assistant") {
     const element = document.createElement("div");
 
@@ -1016,7 +1016,7 @@ function addMessage(text, type = "assistant") {
     messages.scrollTop = messages.scrollHeight;
 }
 
-// Limpa a seleção, a rota e o marcador do mapa.
+
 function clearMap() {
     aisleSelectionRequest++;
 
@@ -1034,7 +1034,7 @@ function clearMap() {
         "Busque um produto para destacar sua localização ou selecione qualquer corredor para explorar o catálogo.";
 }
 
-// Destaca o corredor, indica a prateleira e desenha uma rota ilustrativa.
+
 function drawRoute(id) {
     const selected = aisles.find(aisle => aisle.dataset.aisle === id);
 
@@ -1057,7 +1057,7 @@ function drawRoute(id) {
     destinationMarker.classList.add("visible");
 }
 
-// Destaca um corredor no mapa.
+
 function highlightAisle(corridor, section = "", shelf = "", productName = "") {
 
     const id = normalizeAisle(corridor);
@@ -1100,7 +1100,7 @@ function highlightAisle(corridor, section = "", shelf = "", productName = "") {
         `Destino destacado no corredor ${id}. A linha indica um caminho esquemático a partir da entrada; a planta é ilustrativa.`;
 }
 
-// Renderiza os produtos retornados pelo backend.
+
 function renderProducts(products) {
 
     currentProducts = Array.isArray(products) ? products : [];
@@ -1168,7 +1168,7 @@ function renderProducts(products) {
 
     }).join("");
 
-    // Destaca automaticamente o corredor do primeiro produto.
+    
     const first = currentProducts[0];
 
     highlightAisle(
@@ -1237,9 +1237,8 @@ async function sendMessage(term) {
 
         if (!response.ok) {
             throw new Error(
-                data.detalhe ||
                 data.erro ||
-                `Erro HTTP ${response.status}`
+                "Não foi possível processar sua solicitação. Tente novamente."
             );
         }
 

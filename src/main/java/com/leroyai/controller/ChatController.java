@@ -63,15 +63,9 @@ public class ChatController {
             e.printStackTrace();
 
             statusCode = 500;
-            JsonObject errorResponse =
-                error("Não foi possível processar sua mensagem.");
-            errorResponse.addProperty(
-                "detalhe",
-                e.getMessage() != null
-                    ? e.getMessage()
-                    : e.getClass().getSimpleName()
+            response = error(
+                "Não foi possível processar sua mensagem. Tente novamente mais tarde."
             );
-            response = errorResponse;
         }
 
         sendJson(exchange, statusCode, response);
