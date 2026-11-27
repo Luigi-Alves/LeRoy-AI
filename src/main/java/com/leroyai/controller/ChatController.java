@@ -18,6 +18,8 @@ import java.util.UUID;
 
 public class ChatController {
 
+    private static final int MAX_MENSAGEM = 300;
+
     private final ProdutoService produtoService;
     private final GeminiService geminiService;
     private final InteractionTrackingService trackingService;
@@ -53,7 +55,11 @@ public class ChatController {
                 JsonUtil.fromJson(body, ChatRequest.class);
             String mensagem = request == null || request.mensagem() == null
                 ? ""
-                : request.mensagem();
+                : request.mensagem().trim();
+
+            if (mensagem.length() > MAX_MENSAGEM) {
+                mensagem = mensagem.substring(0, MAX_MENSAGEM);
+            }
 
             if (mensagem.isBlank()) {
                 statusCode = 400;
@@ -134,50 +140,77 @@ public class ChatController {
             );
         }
 
+        // A IA interpreta e explica; se falhar, a busca local continua.
+        GeminiService.Interpretacao ia = interpretarComIa(mensagem);
+
         List<Produto> produtos =
             produtoService.buscarProdutosDireto(mensagem);
         String termoBusca = mensagem;
 
-        if (produtos.isEmpty()) {
-            termoBusca = geminiService.gerarTermoBusca(mensagem);
+        if (produtos.isEmpty() && ia != null && ia.termo() != null) {
+            termoBusca = ia.termo();
             produtos = produtoService.buscarProdutos(termoBusca);
         }
 
         return new ChatResponse(
-            buildResponseMessage(mensagem, produtos),
+            buildResponseMessage(mensagem, produtos, ia),
             termoBusca,
             produtos,
             interactionId
         );
     }
 
+    private GeminiService.Interpretacao interpretarComIa(String mensagem) {
+        if (!geminiService.configurado()) {
+            return null;
+        }
+
+        try {
+            return geminiService.interpretar(mensagem);
+        } catch (Exception e) {
+            System.err.println(
+                "Gemini indisponível, usando busca local: " + e.getMessage()
+            );
+            return null;
+        }
+    }
+
     private String buildResponseMessage(
             String mensagem,
-            List<Produto> produtos
+            List<Produto> produtos,
+            GeminiService.Interpretacao ia
     ) {
         if (produtos.isEmpty()) {
             return "Não encontrei produtos disponíveis no catálogo demonstrativo "
-                + "para essa necessidade. Os preços e estoques não representam "
-                + "dados reais de uma loja.";
+                + "para essa necessidade. Tente descrever de outra forma, "
+                + "por exemplo: \"torneira pingando\" ou \"pintar uma parede\". "
+                + "Os preços e estoques não representam dados reais de uma loja.";
         }
 
-        String base = "Encontrei " + produtos.size()
-            + " produto(s) relacionado(s) no catálogo demonstrativo. "
-            + "Preços e quantidades são fictícios e não representam o estoque "
-            + "real da Leroy Merlin.";
+        StringBuilder texto = new StringBuilder();
+
+        if (ia != null && ia.explicacao() != null
+                && !ia.explicacao().isBlank()) {
+            texto.append(ia.explicacao()).append("\n\n");
+        }
+
+        texto.append("Encontrei ").append(produtos.size())
+            .append(" produto(s) relacionado(s) no catálogo demonstrativo. ")
+            .append("Preços e quantidades são fictícios e não representam o ")
+            .append("estoque real da Leroy Merlin.");
 
         if (isTechnicalQuestion(mensagem)) {
-            return base + " O catálogo não contém especificações de instalação "
-                + "ou compatibilidade; confirme esses detalhes na embalagem, "
-                + "com o fabricante ou com um profissional qualificado.";
+            texto.append(" O catálogo não contém especificações de instalação ")
+                .append("ou compatibilidade; confirme esses detalhes na ")
+                .append("embalagem, com o fabricante ou com um profissional ")
+                .append("qualificado.");
+        } else if (containsAny(
+                normalize(mensagem), "pingando", "vazando", "vazamento")) {
+            texto.append(" O catálogo não permite diagnosticar a causa do ")
+                .append("vazamento; confirme a peça compatível antes de comprar.");
         }
 
-        if (containsAny(normalize(mensagem), "pingando", "vazando", "vazamento")) {
-            return base + " O catálogo não permite diagnosticar a causa do "
-                + "vazamento; confirme a peça compatível antes de comprar.";
-        }
-
-        return base;
+        return texto.toString();
     }
 
     private boolean isTechnicalQuestion(String mensagem) {

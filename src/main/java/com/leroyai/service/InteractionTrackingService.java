@@ -14,9 +14,13 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class InteractionTrackingService {
@@ -162,6 +166,73 @@ public class InteractionTrackingService {
             null, null, null, null, rating, null
         )));
         return true;
+    }
+
+    /** Resumo agregado e anônimo, sem texto livre nem identificadores de sessão. */
+    public synchronized Map<String, Object> resumo() throws IOException {
+        List<InteractionEvent> events = readEvents();
+
+        Map<String, Object> resumo = new LinkedHashMap<>();
+        resumo.put("totalEventos", events.size());
+        resumo.put("interacoesDeChat", contar(events, "CHAT_INTERACTION"));
+        resumo.put("sessoesAnonimas", events.stream()
+            .map(InteractionEvent::sessionId)
+            .filter(Objects::nonNull)
+            .distinct()
+            .count());
+        resumo.put("buscasSemCorrespondencia", events.stream()
+            .filter(e -> "SEARCH".equals(e.eventType()))
+            .filter(e -> "sem correspondência".equals(e.searchTerm()))
+            .count());
+        resumo.put("categoriasMaisBuscadas",
+            ranking(events, "CATEGORY_SEARCH", InteractionEvent::category));
+        resumo.put("produtosMaisRecomendados",
+            ranking(events, "RECOMMENDATION", InteractionEvent::productName));
+        resumo.put("produtosMaisSelecionadosNoMapa",
+            ranking(events, "PRODUCT_SELECTION", InteractionEvent::productName));
+
+        Map<String, Object> avaliacoes = new LinkedHashMap<>();
+        avaliacoes.put("positivas", events.stream()
+            .filter(e -> "RATING".equals(e.eventType()))
+            .filter(e -> "positive".equals(e.rating()))
+            .count());
+        avaliacoes.put("negativas", events.stream()
+            .filter(e -> "RATING".equals(e.eventType()))
+            .filter(e -> "negative".equals(e.rating()))
+            .count());
+        resumo.put("avaliacoes", avaliacoes);
+
+        return resumo;
+    }
+
+    private long contar(List<InteractionEvent> events, String tipo) {
+        return events.stream()
+            .filter(e -> tipo.equals(e.eventType()))
+            .count();
+    }
+
+    private Map<String, Long> ranking(
+            List<InteractionEvent> events,
+            String tipo,
+            Function<InteractionEvent, String> campo
+    ) {
+        return events.stream()
+            .filter(e -> tipo.equals(e.eventType()))
+            .map(campo)
+            .filter(Objects::nonNull)
+            .collect(Collectors.groupingBy(
+                Function.identity(),
+                Collectors.counting()
+            ))
+            .entrySet().stream()
+            .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+            .limit(5)
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (a, b) -> a,
+                LinkedHashMap::new
+            ));
     }
 
     private synchronized void append(List<InteractionEvent> newEvents)

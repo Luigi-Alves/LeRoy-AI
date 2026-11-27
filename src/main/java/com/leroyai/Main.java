@@ -1,4 +1,3 @@
-
 package com.leroyai;
 
 import com.google.gson.JsonObject;
@@ -38,22 +37,20 @@ public class Main {
             0
         );
 
-        // Serviço de produtos
         ProdutoService produtoService = new ProdutoService();
         InteractionTrackingService trackingService =
             new InteractionTrackingService(
                 Path.of("data", "interactions.json")
             );
+        GeminiService geminiService = new GeminiService();
         ChatController chatController =
             new ChatController(
                 produtoService,
-                new GeminiService(),
+                geminiService,
                 trackingService
             );
         InteractionController interactionController =
             new InteractionController(trackingService, produtoService);
-
-        
 
         server.createContext("/api/health", exchange -> {
 
@@ -64,11 +61,10 @@ public class Main {
                 "mensagem",
                 "LeRoy AI Assistant está funcionando!"
             );
+            response.addProperty("ia", geminiService.configurado());
 
             sendResponse(exchange, 200, JsonUtil.toJson(response));
         });
-
-        
 
         server.createContext("/api/products", exchange -> {
 
@@ -94,8 +90,6 @@ public class Main {
                 );
             }
         });
-
-        
 
         server.createContext("/api/search", exchange -> {
 
@@ -149,8 +143,6 @@ public class Main {
             }
         });
 
-        
-
         server.createContext("/api/chat", chatController::handle);
 
         server.createContext("/api/analytics/events", exchange -> {
@@ -160,6 +152,28 @@ public class Main {
                 return;
             }
             interactionController.handleEvent(exchange);
+        });
+
+        server.createContext("/api/analytics/summary", exchange -> {
+            if (!exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+                sendResponse(exchange, 405, "{\"erro\":\"Método não permitido.\"}");
+                return;
+            }
+
+            try {
+                sendResponse(
+                    exchange,
+                    200,
+                    JsonUtil.toJson(trackingService.resumo())
+                );
+            } catch (Exception e) {
+                e.printStackTrace();
+                sendResponse(
+                    exchange,
+                    500,
+                    "{\"erro\":\"Não foi possível gerar o resumo.\"}"
+                );
+            }
         });
 
         server.createContext("/", exchange -> {
@@ -176,8 +190,6 @@ public class Main {
             serveHtml(exchange, "/static/index.html");
         });
 
-        
-
         server.setExecutor(
             Executors.newFixedThreadPool(10)
         );
@@ -186,6 +198,9 @@ public class Main {
 
         System.out.println(
             "LeRoy AI Assistant iniciado na porta " + port
+                + " (IA " + (geminiService.configurado()
+                    ? "configurada" : "NÃO configurada, usando busca local")
+                + ")"
         );
     }
 
@@ -265,9 +280,7 @@ public class Main {
             responseBytes.length
         );
 
-        try (OutputStream output =
-                 exchange.getResponseBody()) {
-
+        try (OutputStream output = exchange.getResponseBody()) {
             output.write(responseBytes);
         }
     }
