@@ -8,9 +8,9 @@ O objetivo é facilitar a jornada de compra, permitindo que o cliente encontre p
 
 ## Links da entrega
 
-* **Aplicação publicada:** COLE_AQUI_O_LINK_DO_RENDER
+* **Aplicação publicada:** https://leroy-ai-3epl.onrender.com/
 * **Vídeo de apresentação:** COLE_AQUI_O_LINK_DO_VIDEO
-* **Resumo anônimo da coleta de dados:** `COLE_AQUI_O_LINK_DO_RENDER/api/analytics/summary`
+* **Resumo anônimo da coleta de dados:** https://leroy-ai-3epl.onrender.com/api/analytics/summary
 
 ## Funcionalidades
 
@@ -162,15 +162,6 @@ Acesse `http://localhost:8080`. O endpoint `/api/health` informa se a IA está c
 docker build -t leroy-ai .
 docker run -p 8080:8080 -e GEMINI_API_KEY="sua-chave" leroy-ai
 ```
-
-### Deploy no Render
-
-1. Envie o repositório para o GitHub, com o `Dockerfile` e o `pom.xml` na raiz.
-2. No Render, crie um **Web Service**, conecte o repositório e escolha o runtime **Docker** e o plano **Free**.
-3. Defina a variável `GEMINI_API_KEY` (e, opcionalmente, `GEMINI_MODEL`).
-4. Após o deploy, confirme em `/api/health`.
-
-No plano gratuito, a aplicação hiberna após um período sem acessos, e a primeira requisição depois disso pode demorar alguns segundos.
 
 ### Comportamento da IA
 
