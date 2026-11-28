@@ -9,7 +9,6 @@ O objetivo é facilitar a jornada de compra, permitindo que o cliente encontre p
 ## Links da entrega
 
 * **Aplicação publicada:** https://leroy-ai-3epl.onrender.com/
-* **Vídeo de apresentação:** COLE_AQUI_O_LINK_DO_VIDEO
 * **Resumo anônimo da coleta de dados:** https://leroy-ai-3epl.onrender.com/api/analytics/summary
 
 ## Funcionalidades
